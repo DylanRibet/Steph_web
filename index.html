@@ -64,7 +64,6 @@
             position: absolute;
             width: 60px;
             height: 90px;
-            background-color: #ff6f61;
             border-radius: 50%;
             cursor: pointer;
             animation: float 6s infinite ease-in-out;
@@ -78,7 +77,6 @@
             left: 25px;
             width: 15px;
             height: 20px;
-            background-color: #ff6f61;
             border-radius: 50%;
         }
 
@@ -114,6 +112,12 @@
         .popup button {
             margin-top: 15px;
         }
+
+        #compteur {
+            font-size: 1.2rem;
+            color: #d60087;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -132,7 +136,7 @@
     </div>
 
     <!-- Étape 3 : Pop-up avec les règles du jeu -->
-    <div class="popup hidden" id="popup">
+    <div class="container hidden" id="popup">
         <h1>Règles du jeu</h1>
         <p>Tu dois éclater le nombre de ballons correspondant à ta VRAIE FÊTE.</p>
         <p>Comme tu es née un 29 février, calcule le nombre de fois où il y a eu un 29 février depuis ta naissance.</p>
@@ -145,6 +149,7 @@
     <div class="container hidden" id="jeu">
         <h1>Éclate les ballons !</h1>
         <p>Clique sur <strong>14 ballons</strong> pour continuer.</p>
+        <p id="compteur">Ballons éclatés : 0/14</p>
         <div id="ballons-container"></div>
     </div>
 
@@ -170,6 +175,7 @@
         // Variables
         let ballonsEclates = 0;
         const ballonsTotal = 14; // Nombre de ballons à éclater
+        const ballonsMax = 40; // Nombre total de ballons générés
 
         // Fonctions pour afficher les étapes
         function afficherEtape2() {
@@ -191,12 +197,14 @@
         // Générer des ballons
         function genererBallons() {
             const container = document.getElementById('ballons-container');
-            for (let i = 0; i < 20; i++) { // Générer 20 ballons
+            const colors = ['#ff6f61', '#6b5b95', '#88b04b', '#ffa700', '#92a8d1']; // Couleurs variées
+            for (let i = 0; i < ballonsMax; i++) { // Générer 40 ballons
                 const balloon = document.createElement('div');
                 balloon.className = 'balloon';
                 balloon.style.left = Math.random() * 80 + 'vw';
                 balloon.style.top = Math.random() * 80 + 'vh';
                 balloon.style.animationDuration = Math.random() * 6 + 4 + 's';
+                balloon.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)]; // Couleur aléatoire
                 balloon.onclick = () => eclaterBallon(balloon);
                 container.appendChild(balloon);
             }
@@ -206,10 +214,31 @@
         function eclaterBallon(balloon) {
             balloon.remove();
             ballonsEclates++;
+            document.getElementById('compteur').textContent = `Ballons éclatés : ${ballonsEclates}/${ballonsTotal}`;
+
+            // Regénérer un nouveau ballon pour garder un total de 40 ballons
+            if (ballonsEclates < ballonsTotal) {
+                genererBallonSupplementaire();
+            }
+
             if (ballonsEclates >= ballonsTotal) {
                 document.getElementById('jeu').classList.add('hidden');
                 document.getElementById('enigme-container').classList.remove('hidden');
             }
+        }
+
+        // Générer un ballon supplémentaire
+        function genererBallonSupplementaire() {
+            const container = document.getElementById('ballons-container');
+            const colors = ['#ff6f61', '#6b5b95', '#88b04b', '#ffa700', '#92a8d1'];
+            const balloon = document.createElement('div');
+            balloon.className = 'balloon';
+            balloon.style.left = Math.random() * 80 + 'vw';
+            balloon.style.top = Math.random() * 80 + 'vh';
+            balloon.style.animationDuration = Math.random() * 6 + 4 + 's';
+            balloon.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            balloon.onclick = () => eclaterBallon(balloon);
+            container.appendChild(balloon);
         }
 
         // Vérification de la réponse à l'énigme
