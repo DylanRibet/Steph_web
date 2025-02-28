@@ -50,6 +50,7 @@
             border-radius: 10px;
             cursor: pointer;
             transition: background-color 0.3s;
+            margin: 5px;
         }
 
         button:hover {
@@ -96,27 +97,62 @@
             100% { transform: translateY(0) translateX(0) rotate(0deg); }
         }
 
-        .popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            z-index: 3;
-            text-align: center;
-        }
-
-        .popup button {
-            margin-top: 15px;
-        }
-
         #compteur {
             font-size: 1.2rem;
             color: #d60087;
             margin-bottom: 15px;
+        }
+
+        #audio-player {
+            margin-top: 20px;
+        }
+
+        .choix-artiste {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Styles pour le jeu de mémoire */
+        #grille-memoire {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 colonnes */
+            grid-template-rows: repeat(4, 1fr); /* 4 rangées */
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .carte {
+            width: 100px;
+            height: 100px;
+            background-color: #d60087;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: white;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+        }
+
+        .carte img {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .carte.retournee {
+            transform: rotateY(180deg);
+        }
+
+        .carte.trouvee {
+            opacity: 0.5;
+            cursor: default;
         }
     </style>
 </head>
@@ -153,19 +189,44 @@
         <div id="ballons-container"></div>
     </div>
 
-    <!-- Étape 5 : Énigme finale -->
+    <!-- Étape 5 : Jeu "Devine la chanson" -->
+    <div class="container hidden" id="jeu-chanson">
+        <h1>Devine la chanson !</h1>
+        <p>Écoute l'extrait musical et devine l'artiste parmi les choix proposés.</p>
+        <p>Clique sur "Commencer l'écoute" pour jouer la chanson.</p>
+        <button onclick="commencerEcoute()">Commencer l'écoute</button>
+        <audio id="audio-player" controls class="hidden">
+            <source src="assets/chanson.mp3" type="audio/mpeg">
+            Votre navigateur ne supporte pas l'élément audio.
+        </audio>
+        <div class="choix-artiste">
+            <button onclick="verifierReponseChanson('Artiste 1')">Led Zeplin - Stairway To Heaven</button>
+            <button onclick="verifierReponseChanson('Artiste 2')">Dylan chantant sous la douche</button>
+            <button onclick="verifierReponseChanson('Artiste 3')">Imagine Dragons - Believer</button>
+            <button onclick="verifierReponseChanson('Artiste 4')">Bleu Jeans Bleu - Coton Ouaté</button>
+        </div>
+    </div>
+
+    <!-- Étape 6 : Jeu de mémoire -->
+    <div class="container hidden" id="jeu-memoire">
+        <h1>Jeu de Mémoire 🃏</h1>
+        <p>Retourne les cartes pour trouver les paires !</p>
+        <div id="grille-memoire"></div>
+    </div>
+
+    <!-- Étape 7 : Énigme finale -->
     <div class="container hidden" id="enigme-container">
         <h1>Félicitation !</h1>
         <p>Pour accéder à la suite, tu dois résoudre cette énigme :</p>
         <p><strong>Je suis rare, je n'arrive que tous les 4 ans. Qui suis-je ?</strong></p>
         <input type="text" id="reponse" placeholder="Ta réponse ici...">
-        <button onclick="verifierReponse()">Valider</button>
+        <button onclick="verifierReponseEnigme()">Valider</button>
     </div>
 
-    <!-- Étape 6 : Message d'anniversaire -->
+    <!-- Étape 8 : Message d'anniversaire -->
     <div class="container hidden" id="anniversaire-container">
-        <h1>🎉 Joyeux Anniversaire Stéphanie ! 🎉</h1>
-        <p>Bravo, tu as résolu l'énigme ! 🎈</p>
+        <h1>🎉 Joyeux Anniversaire Stéphanie ! �</h1>
+        <p>Bravo, tu as résolu l'énigme ! �</p>
         <p>Ça fait 10 ans que je te connais, et tu mérites une fête exceptionnelle !</p>
         <p>Ton anniversaire est tellement spécial qu'il n'arrive que tous les 4 ans... 😂</p>
         <p>Profite bien de cette journée unique, tout comme toi ! 🎂🎈</p>
@@ -176,6 +237,7 @@
         let ballonsEclates = 0;
         const ballonsTotal = 14; // Nombre de ballons à éclater
         const ballonsMax = 40; // Nombre total de ballons générés
+        const artisteCorrect = "Artiste 3"; // La bonne réponse pour le jeu de la chanson
 
         // Fonctions pour afficher les étapes
         function afficherEtape2() {
@@ -223,7 +285,7 @@
 
             if (ballonsEclates >= ballonsTotal) {
                 document.getElementById('jeu').classList.add('hidden');
-                document.getElementById('enigme-container').classList.remove('hidden');
+                document.getElementById('jeu-chanson').classList.remove('hidden');
             }
         }
 
@@ -241,8 +303,114 @@
             container.appendChild(balloon);
         }
 
-        // Vérification de la réponse à l'énigme
-        function verifierReponse() {
+        // Fonction pour commencer l'écoute de la chanson
+        function commencerEcoute() {
+            const audioPlayer = document.getElementById('audio-player');
+            audioPlayer.classList.remove('hidden');
+            audioPlayer.play();
+        }
+
+        // Vérification de la réponse pour le jeu de la chanson
+        function verifierReponseChanson(artisteChoisi) {
+            const audioPlayer = document.getElementById('audio-player');
+            if (artisteChoisi === artisteCorrect) {
+                audioPlayer.pause(); // Arrêter la musique
+                alert("Bravo, tu as trouvé la bonne réponse ! 🎉");
+                document.getElementById('jeu-chanson').classList.add('hidden');
+                afficherJeuMemoire(); // Afficher le jeu de mémoire
+            } else {
+                alert("Dommage, ce n'est pas le bon artiste. Essaie encore ! 😉");
+            }
+        }
+
+        // Variables pour le jeu de mémoire
+        let cartesRetournees = [];
+        let pairesTrouvees = 0;
+        const totalPaires = 6; // Nombre de paires à trouver
+
+        // Tableau des images (6 paires)
+        const imagesMemoire = [
+            "assets/memory1.png", "assets/memory2.png", "assets/memory3.png",
+            "assets/memory4.png", "assets/memory5.png", "assets/memory6.png"
+        ];
+
+        // Dupliquer les images pour créer des paires
+        const cartesMemoire = [...imagesMemoire, ...imagesMemoire];
+
+        // Mélanger les cartes
+        cartesMemoire.sort(() => Math.random() - 0.5);
+
+        // Fonction pour créer la grille de mémoire
+        function creerGrilleMemoire() {
+            const grille = document.getElementById('grille-memoire');
+            grille.innerHTML = ''; // Vider la grille
+
+            cartesMemoire.forEach((image, index) => {
+                const carte = document.createElement('div');
+                carte.className = 'carte';
+                carte.dataset.index = index;
+                carte.innerHTML = `
+                    <div class="face-cachee">
+                        <img src="assets/dos.png" alt="Dos de carte">
+                    </div>
+                    <div class="face-visible">
+                        <img src="${image}" alt="Image mémoire">
+                    </div>
+                `;
+                carte.addEventListener('click', retournerCarte);
+                grille.appendChild(carte);
+            });
+        }
+
+        // Fonction pour retourner une carte
+        function retournerCarte() {
+            if (cartesRetournees.length < 2 && !this.classList.contains('retournee')) {
+                this.classList.add('retournee');
+                cartesRetournees.push(this);
+
+                if (cartesRetournees.length === 2) {
+                    verifierPaire();
+                }
+            }
+        }
+
+        // Fonction pour vérifier si les cartes retournées forment une paire
+        function verifierPaire() {
+            const [carte1, carte2] = cartesRetournees;
+            const image1 = carte1.querySelector('.face-visible img').src;
+            const image2 = carte2.querySelector('.face-visible img').src;
+
+            if (image1 === image2) {
+                pairesTrouvees++;
+                carte1.classList.add('trouvee');
+                carte2.classList.add('trouvee');
+                cartesRetournees = [];
+
+                if (pairesTrouvees === totalPaires) {
+                    setTimeout(() => {
+                        alert("Félicitations, tu as trouvé toutes les paires ! 🎉");
+                        document.getElementById('jeu-memoire').classList.add('hidden');
+                        document.getElementById('enigme-container').classList.remove('hidden');
+                    }, 500);
+                }
+            } else {
+                setTimeout(() => {
+                    carte1.classList.remove('retournee');
+                    carte2.classList.remove('retournee');
+                    cartesRetournees = [];
+                }, 1000);
+            }
+        }
+
+        // Afficher le jeu de mémoire après le jeu de la devinette musicale
+        function afficherJeuMemoire() {
+            document.getElementById('jeu-chanson').classList.add('hidden');
+            document.getElementById('jeu-memoire').classList.remove('hidden');
+            creerGrilleMemoire();
+        }
+
+        // Vérification de la réponse à l'énigme finale
+        function verifierReponseEnigme() {
             const reponse = document.getElementById('reponse').value.toLowerCase();
             const reponsesValides = [
                 "29 février", "29 fevrier", "ma fete", "mon anniversaire", 
