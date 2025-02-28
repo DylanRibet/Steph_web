@@ -154,9 +154,79 @@
             opacity: 0.5;
             cursor: default;
         }
+
+        .face-cachee, .face-visible {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+        }
+
+        .face-cachee {
+            transform: rotateY(0deg);
+        }
+
+        .face-visible {
+            transform: rotateY(180deg);
+        }
+
+        #decompte {
+            font-size: 1.2rem;
+            color: #d60087;
+            margin-top: 10px;
+        }
+
+
+        /* Styles pour le jeu Pierre-Feuille-Ciseaux */
+        #pfc-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #pfc-choix {
+            display: flex;
+            gap: 10px;
+        }
+
+        #pfc-choix button {
+            font-size: 2rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        #pfc-resultat {
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+
+        /* Style pour le bouton Skip */
+        #skip-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #d60087;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            z-index: 1000;
+        }
+
+        #skip-button:hover {
+            background-color: #ff6f61;
+        }
     </style>
 </head>
 <body>
+    <!-- Bouton Skip -->
+    <button id="skip-button" onclick="skipEtape()">Skip</button>
+
     <!-- Étape 1 : Introduction -->
     <div class="container" id="etape1">
         <h1>Bon, bon, bon...</h1>
@@ -211,10 +281,25 @@
     <div class="container hidden" id="jeu-memoire">
         <h1>Jeu de Mémoire 🃏</h1>
         <p>Retourne les cartes pour trouver les paires !</p>
+        <button id="commencer-jeu" onclick="commencerJeuMemoire()">Commencer le jeu</button>
+        <p id="decompte" class="hidden">Temps restant : <span id="temps-restant">15</span> secondes</p>
         <div id="grille-memoire"></div>
     </div>
 
-    <!-- Étape 7 : Énigme finale -->
+    <!-- Étape 7 : Jeu Pierre-Feuille-Ciseaux -->
+    <div class="container hidden" id="jeu-pfc">
+        <h1>Pierre-Feuille-Ciseaux ✌️</h1>
+        <div id="pfc-container">
+            <div id="pfc-choix">
+                <button onclick="jouerPFC('pierre')">🤛</button>
+                <button onclick="jouerPFC('feuille')">✋</button>
+                <button onclick="jouerPFC('ciseaux')">✌️</button>
+            </div>
+            <p id="pfc-resultat"></p>
+        </div>
+    </div>
+
+    <!-- Étape 8 : Énigme finale -->
     <div class="container hidden" id="enigme-container">
         <h1>Félicitation !</h1>
         <p>Pour accéder à la suite, tu dois résoudre cette énigme :</p>
@@ -223,10 +308,10 @@
         <button onclick="verifierReponseEnigme()">Valider</button>
     </div>
 
-    <!-- Étape 8 : Message d'anniversaire -->
+    <!-- Étape 9 : Message d'anniversaire -->
     <div class="container hidden" id="anniversaire-container">
-        <h1>🎉 Joyeux Anniversaire Stéphanie ! �</h1>
-        <p>Bravo, tu as résolu l'énigme ! �</p>
+        <h1>🎉 Joyeux Anniversaire Stéphanie ! 🎉</h1>
+        <p>Bravo, tu as résolu l'énigme ! 🎈</p>
         <p>Ça fait 10 ans que je te connais, et tu mérites une fête exceptionnelle !</p>
         <p>Ton anniversaire est tellement spécial qu'il n'arrive que tous les 4 ans... 😂</p>
         <p>Profite bien de cette journée unique, tout comme toi ! 🎂🎈</p>
@@ -238,6 +323,22 @@
         const ballonsTotal = 14; // Nombre de ballons à éclater
         const ballonsMax = 40; // Nombre total de ballons générés
         const artisteCorrect = "Artiste 3"; // La bonne réponse pour le jeu de la chanson
+
+        // Variables pour le jeu Pierre-Feuille-Ciseaux
+        let pfcManches = 0;
+        let pfcDefaites = 0;
+
+        // Fonction pour passer à l'étape suivante
+        function skipEtape() {
+            const etapes = [
+                "etape1", "etape2", "popup", "jeu", "jeu-chanson", "jeu-memoire", "jeu-pfc", "enigme-container", "anniversaire-container"
+            ];
+            let etapeActuelle = etapes.findIndex(etape => !document.getElementById(etape).classList.contains('hidden'));
+            if (etapeActuelle < etapes.length - 1) {
+                document.getElementById(etapes[etapeActuelle]).classList.add('hidden');
+                document.getElementById(etapes[etapeActuelle + 1]).classList.remove('hidden');
+            }
+        }
 
         // Fonctions pour afficher les étapes
         function afficherEtape2() {
@@ -310,13 +411,19 @@
             audioPlayer.play();
         }
 
+        // Fonction pour afficher le jeu de mémoire
+        function afficherJeuMemoire() {
+            document.getElementById('jeu-chanson').classList.add('hidden');
+            document.getElementById('jeu-memoire').classList.remove('hidden');
+            creerGrilleMemoire(); // Créer la grille de mémoire
+        }
+
         // Vérification de la réponse pour le jeu de la chanson
         function verifierReponseChanson(artisteChoisi) {
             const audioPlayer = document.getElementById('audio-player');
             if (artisteChoisi === artisteCorrect) {
                 audioPlayer.pause(); // Arrêter la musique
                 alert("Bravo, tu as trouvé la bonne réponse ! 🎉");
-                document.getElementById('jeu-chanson').classList.add('hidden');
                 afficherJeuMemoire(); // Afficher le jeu de mémoire
             } else {
                 alert("Dommage, ce n'est pas le bon artiste. Essaie encore ! 😉");
@@ -327,6 +434,8 @@
         let cartesRetournees = [];
         let pairesTrouvees = 0;
         const totalPaires = 6; // Nombre de paires à trouver
+        let tempsRestant = 15; // Temps pour mémoriser les cartes
+        let decompteActif = false;
 
         // Tableau des images (6 paires)
         const imagesMemoire = [
@@ -362,9 +471,44 @@
             });
         }
 
+        // Fonction pour commencer le jeu de mémoire
+        function commencerJeuMemoire() {
+            const boutonCommencer = document.getElementById('commencer-jeu');
+            const decompte = document.getElementById('decompte');
+            boutonCommencer.classList.add('hidden');
+            decompte.classList.remove('hidden');
+
+            // Afficher les cartes pendant 15 secondes
+            creerGrilleMemoire();
+            decompteActif = true;
+            demarrerDecompte();
+
+            // Retourner les cartes après 15 secondes
+            setTimeout(() => {
+                decompteActif = false;
+                document.querySelectorAll('.carte').forEach(carte => {
+                    carte.classList.remove('retournee');
+                });
+                decompte.classList.add('hidden');
+            }, 15000);
+        }
+
+        // Fonction pour démarrer le décompte
+        function demarrerDecompte() {
+            const tempsRestantElement = document.getElementById('temps-restant');
+            const interval = setInterval(() => {
+                if (tempsRestant > 0 && decompteActif) {
+                    tempsRestant--;
+                    tempsRestantElement.textContent = tempsRestant;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+
         // Fonction pour retourner une carte
         function retournerCarte() {
-            if (cartesRetournees.length < 2 && !this.classList.contains('retournee')) {
+            if (!decompteActif && cartesRetournees.length < 2 && !this.classList.contains('retournee')) {
                 this.classList.add('retournee');
                 cartesRetournees.push(this);
 
@@ -390,7 +534,7 @@
                     setTimeout(() => {
                         alert("Félicitations, tu as trouvé toutes les paires ! 🎉");
                         document.getElementById('jeu-memoire').classList.add('hidden');
-                        document.getElementById('enigme-container').classList.remove('hidden');
+                        document.getElementById('jeu-pfc').classList.remove('hidden');
                     }, 500);
                 }
             } else {
@@ -402,11 +546,52 @@
             }
         }
 
-        // Afficher le jeu de mémoire après le jeu de la devinette musicale
-        function afficherJeuMemoire() {
-            document.getElementById('jeu-chanson').classList.add('hidden');
-            document.getElementById('jeu-memoire').classList.remove('hidden');
-            creerGrilleMemoire();
+        // Fonction pour jouer à Pierre-Feuille-Ciseaux
+        function jouerPFC(choixJoueur) {
+            const choixRobot = genererChoixRobot();
+            const resultat = determinerResultat(choixJoueur, choixRobot);
+
+            // Afficher le résultat
+            const resultatElement = document.getElementById('pfc-resultat');
+            resultatElement.textContent = `Tu as choisi ${choixJoueur}, le robot a choisi ${choixRobot}. ${resultat}`;
+
+            // Mettre à jour le nombre de défaites
+            if (resultat === "Perdu !") {
+                pfcDefaites++;
+            }
+
+            // Passer à l'énigme finale après 3 manches
+            pfcManches++;
+            if (pfcManches === 3) {
+                if (pfcDefaites >= 2) {
+                    resultatElement.textContent += " Tu as perdu deux fois, tu gagnes automatiquement cette manche !";
+                }
+                setTimeout(() => {
+                    document.getElementById('jeu-pfc').classList.add('hidden');
+                    document.getElementById('enigme-container').classList.remove('hidden');
+                }, 2000);
+            }
+        }
+
+        // Fonction pour générer le choix du robot
+        function genererChoixRobot() {
+            const choix = ["pierre", "feuille", "ciseaux"];
+            return choix[Math.floor(Math.random() * choix.length)];
+        }
+
+        // Fonction pour déterminer le résultat
+        function determinerResultat(choixJoueur, choixRobot) {
+            if (choixJoueur === choixRobot) {
+                return "Égalité !";
+            }
+            if (
+                (choixJoueur === "pierre" && choixRobot === "ciseaux") ||
+                (choixJoueur === "feuille" && choixRobot === "pierre") ||
+                (choixJoueur === "ciseaux" && choixRobot === "feuille")
+            ) {
+                return "Gagné !";
+            }
+            return "Perdu !";
         }
 
         // Vérification de la réponse à l'énigme finale
