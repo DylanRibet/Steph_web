@@ -221,6 +221,44 @@
         #skip-button:hover {
             background-color: #ff6f61;
         }
+
+        /* Styles pour le jeu Pierre-Feuille-Ciseaux */
+        #pfc-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #pfc-choix {
+            display: flex;
+            gap: 10px;
+        }
+
+        #pfc-choix button {
+            font-size: 2rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        #pfc-resultat {
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+
+        #pfc-animation {
+            font-size: 3rem;
+            animation: shake 0.5s infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
     </style>
 </head>
 <body>
@@ -296,6 +334,7 @@
                 <button onclick="jouerPFC('ciseaux')">✌️</button>
             </div>
             <p id="pfc-resultat"></p>
+            <div id="pfc-animation" class="hidden">🤖</div>
         </div>
     </div>
 
@@ -548,29 +587,41 @@
 
         // Fonction pour jouer à Pierre-Feuille-Ciseaux
         function jouerPFC(choixJoueur) {
-            const choixRobot = genererChoixRobot();
-            const resultat = determinerResultat(choixJoueur, choixRobot);
+            const animation = document.getElementById('pfc-animation');
+            animation.classList.remove('hidden');
+            animation.textContent = "🤖";
 
-            // Afficher le résultat
-            const resultatElement = document.getElementById('pfc-resultat');
-            resultatElement.textContent = `Tu as choisi ${choixJoueur}, le robot a choisi ${choixRobot}. ${resultat}`;
+            // Délai avant que le robot ne joue
+            setTimeout(() => {
+                const choixRobot = genererChoixRobot();
+                const resultat = determinerResultat(choixJoueur, choixRobot);
 
-            // Mettre à jour le nombre de défaites
-            if (resultat === "Perdu !") {
-                pfcDefaites++;
-            }
+                // Afficher le résultat
+                const resultatElement = document.getElementById('pfc-resultat');
+                resultatElement.textContent = `TOI 🧍🏻‍♀️ ${choixJoueur} vs ROBOT 🤖 ${choixRobot} Robot. ${resultat}`;
 
-            // Passer à l'énigme finale après 3 manches
-            pfcManches++;
-            if (pfcManches === 3) {
-                if (pfcDefaites >= 2) {
-                    resultatElement.textContent += " Tu as perdu deux fois, tu gagnes automatiquement cette manche !";
+                // Mettre à jour le nombre de défaites
+                if (resultat === "Perdu !") {
+                    pfcDefaites++;
                 }
-                setTimeout(() => {
-                    document.getElementById('jeu-pfc').classList.add('hidden');
-                    document.getElementById('enigme-container').classList.remove('hidden');
-                }, 2000);
-            }
+
+                // Passer à l'énigme finale si elle gagne
+                if (resultat === "Gagné !") {
+                    setTimeout(() => {
+                        document.getElementById('jeu-pfc').classList.add('hidden');
+                        document.getElementById('enigme-container').classList.remove('hidden');
+                    }, 1500);
+                } else if (pfcDefaites >= 2) {
+                    // Si elle a perdu deux fois, elle gagne automatiquement
+                    setTimeout(() => {
+                        resultatElement.textContent += " Tu as perdu deux fois, tu gagnes automatiquement cette manche !";
+                        document.getElementById('jeu-pfc').classList.add('hidden');
+                        document.getElementById('enigme-container').classList.remove('hidden');
+                    }, 1500);
+                }
+
+                animation.classList.add('hidden');
+            }, 1500); // Délai de 1,5 seconde pour l'animation
         }
 
         // Fonction pour générer le choix du robot
